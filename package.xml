@@ -5,7 +5,7 @@
   <description>Catkinized Guideline Support Library</description>
 
   <maintainer email="ghottiger@anybotics.com">Gabriel Hottiger</maintainer>
-  <author email="ghottiger@anybotics.com">Gabriel Hottiger</author>
+  <author email="opencode@microsoft.com">Microsoft</author>
 
   <license>MIT</license>
   <url>https://github.com/anybotics/gsl</url>
@@ -13,4 +13,3 @@
   <buildtool_depend>catkin</buildtool_depend>
 
 </package>
-

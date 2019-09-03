@@ -1,3 +1,15 @@
+# NOTE: This is a fork from the official repository
+
+**The following changes have been done:**
+
+* Caktinized GSL
+
+Build with
+
+    catkin build gsl_catkin
+
+-----------------
+
 # GSL: Guidelines Support Library [![Build Status](https://travis-ci.org/Microsoft/GSL.svg?branch=master)](https://travis-ci.org/Microsoft/GSL) [![Build status](https://ci.appveyor.com/api/projects/status/github/Microsoft/GSL?svg=true)](https://ci.appveyor.com/project/neilmacintosh/GSL)
 
 The Guidelines Support Library (GSL) contains functions and types that are suggested for use by the
