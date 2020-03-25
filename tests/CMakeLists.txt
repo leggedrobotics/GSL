@@ -5,26 +5,32 @@ project(GSLTests CXX)
 # will make visual studio generated project group files
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-list(APPEND CATCH_CMAKE_ARGS
-    "-DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/external"
-    "-DNO_SELFTEST=true"
+configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download
 )
-
-if(GIT_FOUND)
-    # add catch
-    ExternalProject_Add(
-        catch
-        PREFIX ${CMAKE_BINARY_DIR}/catch
-        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-        GIT_TAG v2.0.1
-        CMAKE_ARGS ${CATCH_CMAKE_ARGS}
-        LOG_DOWNLOAD 1
-        UPDATE_DISCONNECTED 1
-    )
-else()
-    # assume catch is installed in a system directory
-    add_custom_target(catch)
+if(result)
+    message(FATAL_ERROR "CMake step for googletest failed: ${result}")
 endif()
+
+execute_process(
+    COMMAND ${CMAKE_COMMAND} --build .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download
+)
+if(result)
+    message(FATAL_ERROR "CMake step for googletest failed: ${result}")
+endif()
+
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+add_subdirectory(
+    ${CMAKE_CURRENT_BINARY_DIR}/googletest-src
+    ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
+    EXCLUDE_FROM_ALL
+)
 
 if (MSVC AND (GSL_CXX_STANDARD EQUAL 17))
     set(GSL_CPLUSPLUS_OPT -Zc:__cplusplus -permissive-)
@@ -39,14 +45,38 @@ if(MSVC) # MSVC or simulating MSVC
         /EHsc
         /W4
         /WX
+        $<$<CXX_COMPILER_ID:MSVC>:
+          /wd4996  # Use of function or classes marked [[deprecated]]
+          /wd26409 # CppCoreCheck - GTest
+          /wd26426 # CppCoreCheck - GTest
+          /wd26440 # CppCoreCheck - GTest
+          /wd26446 # CppCoreCheck - prefer gsl::at()
+          /wd26472 # CppCoreCheck - use gsl::narrow(_cast)
+          /wd26481 # CppCoreCheck - use span instead of pointer arithmetic
+          $<$<VERSION_LESS:$<CXX_COMPILER_VERSION>,1920>: # VS2015
+            /wd4189 # variable is initialized but not referenced
+            $<$<NOT:$<CONFIG:Debug>>: # Release, RelWithDebInfo
+              /wd4702 # Unreachable code
+            >
+          >
+        >
         $<$<CXX_COMPILER_ID:Clang>:
           -Weverything
           -Wno-c++98-compat
           -Wno-c++98-compat-pedantic
+          -Wno-covered-switch-default # GTest
+          -Wno-deprecated-declarations # Allow tests for [[deprecated]] elements
+          -Wno-global-constructors # GTest
+          -Wno-language-extension-token # GTest gtest-port.h
           -Wno-missing-braces
           -Wno-missing-prototypes
-          -Wno-unknown-attributes
-          $<$<EQUAL:${GSL_CXX_STANDARD},14>:-Wno-unused-member-function>
+          -Wno-shift-sign-overflow # GTest gtest-port.h
+          -Wno-undef # GTest
+          -Wno-used-but-marked-unused # GTest EXPECT_DEATH
+          $<$<EQUAL:${GSL_CXX_STANDARD},14>: # no support for [[maybe_unused]]
+            -Wno-unused-member-function
+            -Wno-unused-variable
+          >
         >
     )
 else()
@@ -61,60 +91,70 @@ else()
         -Wpedantic
         -Wshadow
         -Wsign-conversion
+        -Wno-deprecated-declarations # Allow tests for [[deprecated]] elements
         $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
           -Weverything
           -Wno-c++98-compat
           -Wno-c++98-compat-pedantic
           -Wno-missing-braces
+          -Wno-covered-switch-default # GTest
+          -Wno-global-constructors # GTest
           -Wno-missing-prototypes
           -Wno-padded
           -Wno-unknown-attributes
-          $<$<EQUAL:${GSL_CXX_STANDARD},14>:-Wno-unused-member-function>
+          -Wno-used-but-marked-unused # GTest EXPECT_DEATH
           -Wno-weak-vtables
+          $<$<EQUAL:${GSL_CXX_STANDARD},14>: # no support for [[maybe_unused]]
+            -Wno-unused-member-function
+            -Wno-unused-variable
+          >
         >
         $<$<CXX_COMPILER_ID:Clang>:
           $<$<CXX_COMPILER_VERSION:5.0.2>:-Wno-undefined-func-template>
         >
+        $<$<CXX_COMPILER_ID:GNU>:
+          -Wdouble-promotion # float implicit to double
+          -Wlogical-op # suspicious uses of logical operators
+          $<$<NOT:$<VERSION_LESS:$<CXX_COMPILER_VERSION>,6>>:
+            -Wduplicated-cond # duplicated if-else conditions
+            -Wmisleading-indentation
+            -Wnull-dereference
+            $<$<EQUAL:${GSL_CXX_STANDARD},14>: # no support for [[maybe_unused]]
+              -Wno-unused-variable
+            >
+          >
+          $<$<NOT:$<VERSION_LESS:$<CXX_COMPILER_VERSION>,7>>:
+            -Wduplicated-branches # identical if-else branches
+          >
+        >
     )
 endif(MSVC)
 
-# for tests to find the catch header
-target_include_directories(gsl_tests_config INTERFACE
-    ${CMAKE_BINARY_DIR}/external/include
+# for tests to find the gtest header
+target_include_directories(gsl_tests_config SYSTEM INTERFACE
+    googletest/googletest/include
 )
 
-# set definitions for tests
-target_compile_definitions(gsl_tests_config INTERFACE
-    GSL_THROW_ON_CONTRACT_VIOLATION
-)
-
-# create the main executable for each test. this reduces the compile time
-# of each test by pre-compiling catch.
-add_library(test_catch STATIC test.cpp)
-target_link_libraries(test_catch
-    GSL
-    gsl_tests_config
-)
-add_dependencies(test_catch catch)
-set_property(TARGET test_catch PROPERTY FOLDER "GSL_tests")
+set_property(TARGET  PROPERTY FOLDER "GSL_tests")
 
 function(add_gsl_test name)
     add_executable(${name} ${name}.cpp)
     target_link_libraries(${name}
         GSL
-        test_catch
         gsl_tests_config
+        gtest_main
     )
-    add_dependencies(${name} catch)
     add_test(
-      ${name}
-      ${name}
+        ${name}
+        ${name}
     )
     # group all tests under GSL_tests
     set_property(TARGET ${name} PROPERTY FOLDER "GSL_tests")
 endfunction()
 
 add_gsl_test(span_tests)
+add_gsl_test(span_ext_tests)
+add_gsl_test(span_compatibility_tests)
 add_gsl_test(multi_span_tests)
 add_gsl_test(strided_span_tests)
 add_gsl_test(string_span_tests)
@@ -142,7 +182,7 @@ endforeach(flag_var)
 add_library(gsl_tests_config_noexcept INTERFACE)
 if(MSVC) # MSVC or simulating MSVC
     target_compile_definitions(gsl_tests_config_noexcept INTERFACE
-        _HAS_EXCEPTIONS=0
+        _HAS_EXCEPTIONS=0 # disable exceptions in the Microsoft STL
     )
     target_compile_options(gsl_tests_config_noexcept INTERFACE
         ${GSL_CPLUSPLUS_OPT}
@@ -151,6 +191,8 @@ if(MSVC) # MSVC or simulating MSVC
         $<$<CXX_COMPILER_ID:MSVC>:
           /wd4577
           /wd4702
+          /wd26440 # CppCoreCheck - GTest
+          /wd26446 # CppCoreCheck - prefer gsl::at()
         >
         $<$<CXX_COMPILER_ID:Clang>:
           -Weverything
@@ -181,19 +223,31 @@ else()
           -Wno-unknown-attributes
           -Wno-weak-vtables
         >
+        $<$<CXX_COMPILER_ID:GNU>:
+          -Wdouble-promotion # float implicit to double
+          -Wlogical-op # suspicious uses of logical operators
+          -Wuseless-cast # casting to its own type
+          $<$<NOT:$<VERSION_LESS:$<CXX_COMPILER_VERSION>,6>>:
+            -Wduplicated-cond # duplicated if-else conditions
+            -Wmisleading-indentation
+            -Wnull-dereference
+          >
+          $<$<NOT:$<VERSION_LESS:$<CXX_COMPILER_VERSION>,7>>:
+            -Wduplicated-branches # identical if-else branches
+          >
+          $<$<NOT:$<VERSION_LESS:$<CXX_COMPILER_VERSION>,8>>:
+            -Wcast-align=strict # increase alignment (i.e. char* to int*)
+          >
+        >
     )
 endif(MSVC)
-
-# set definitions for tests
-target_compile_definitions(gsl_tests_config_noexcept INTERFACE
-    GSL_TERMINATE_ON_CONTRACT_VIOLATION
-)
 
 function(add_gsl_test_noexcept name)
     add_executable(${name} ${name}.cpp)
     target_link_libraries(${name}
         GSL
         gsl_tests_config_noexcept
+        gtest_main
     )
     add_test(
       ${name}

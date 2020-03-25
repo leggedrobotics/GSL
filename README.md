@@ -30,7 +30,7 @@ other platforms. Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for more inform
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
 # Usage of Third Party Libraries
-This project makes use of the [Catch](https://github.com/philsquared/catch) testing library. Please see the [ThirdPartyNotices.txt](./ThirdPartyNotices.txt) file for details regarding the licensing of Catch.
+This project makes use of the [Google Test](https://github.com/google/gooletest) testing library. Please see the [ThirdPartyNotices.txt](./ThirdPartyNotices.txt) file for details regarding the licensing of Google Test.
 
 # Quick Start
 ## Supported Platforms
@@ -48,6 +48,8 @@ The test suite that exercises GSL has been built and passes successfully on the 
 * GNU/Linux using Clang/LLVM 6.0
 * GNU/Linux using Clang/LLVM 7.0
 * GNU/Linux using GCC 5.1
+* OS X Mojave 10.14.4 using Apple LLVM version 10.0.0 (10.0.1.10010046)
+* OS X Mojave 10.14.3 using Apple LLVM version 10.0.0 (clang-1000.11.45.5)
 * OS X Yosemite using Xcode with Apple Clang 7.0.0.7000072
 * OS X Yosemite using GCC-5.2.0
 * OS X Sierra 10.12.4 using Apple LLVM version 8.1.0 (Clang-802.0.42)
@@ -87,6 +89,18 @@ These steps assume the source code of this repository has been cloned into a dir
 
 All tests should pass - indicating your platform is fully supported and you are ready to use the GSL types!
 
+## Building GSL - Using vcpkg
+
+You can download and install GSL using the [vcpkg](https://github.com/Microsoft/vcpkg) dependency manager:
+
+    git clone https://github.com/Microsoft/vcpkg.git
+    cd vcpkg
+    ./bootstrap-vcpkg.sh
+    ./vcpkg integrate install
+    vcpkg install ms-gsl
+
+The GSL port in vcpkg is kept up to date by Microsoft team members and community contributors. If the version is out of date, please [create an issue or pull request](https://github.com/Microsoft/vcpkg) on the vcpkg repository.
+
 ## Using the libraries
 As the types are entirely implemented inline in headers, there are no linking requirements.
 
@@ -106,6 +120,15 @@ GCC/clang
 Include the library using:
 
     #include <gsl/gsl>
+
+## Usage in CMake
+
+The library provides a Config file for CMake, once installed it can be found via
+
+    find_package(Microsoft.GSL CONFIG)
+
+Which, when successful, will add library target called `Microsoft.GSL::GSL` which you can use via the usual
+`target_link_libraries` mechanism.
 
 ## Debugging visualization support
 For Visual Studio users, the file [GSL.natvis](./GSL.natvis) in the root directory of the repository can be added to your project if you would like more helpful visualization of GSL types in the Visual Studio debugger than would be offered by default.
