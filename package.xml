@@ -12,5 +12,6 @@
   <url>https://github.com/anybotics/gsl</url>
 
   <buildtool_depend>catkin</buildtool_depend>
-
+  <test_depend>catch_ros</test_depend>
+<!--   <test_depend>cmake_code_coverage</test_depend> -->
 </package>

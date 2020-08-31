@@ -21,7 +21,11 @@
 
 #endif
 
+#ifdef CATCH_ROS
+#include <catch_ros/catch.hpp> // for AssertionHandler, StringRef, CHECK, TEST_...
+#else
 #include <catch/catch.hpp> // for AssertionHandler, StringRef, CHECK, TEST_...
+#endif
 
 #include <gsl/gsl_assert>  // for Expects, fail_fast (ptr only)
 #include <gsl/pointers>    // for owner

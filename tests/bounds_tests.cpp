@@ -20,7 +20,11 @@
 #pragma warning(disable : 26440 26426) // from catch
 #endif
 
+#ifdef CATCH_ROS
+#include <catch_ros/catch.hpp> // for AssertionHandler, StringRef, TEST_CASE
+#else
 #include <catch/catch.hpp> // for AssertionHandler, StringRef, TEST_CASE
+#endif
 
 #include <gsl/multi_span> // for static_bounds, static_bounds_dynamic_range_t
 

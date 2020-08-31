@@ -20,7 +20,11 @@
 #pragma warning(disable : 26440 26426) // from catch
 #endif
 
+#ifdef CATCH_ROS
+#include <catch_ros/catch.hpp> // for AssertionHandler, StringRef, CHECK, TEST_...
+#else
 #include <catch/catch.hpp> // for AssertionHandler, StringRef, CHECK, TEST_...
+#endif
 
 #include <gsl/gsl_byte> // for to_byte, to_integer, byte, operator&, ope...
 

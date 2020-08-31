@@ -20,7 +20,11 @@
 #pragma warning(disable : 26440 26426) // from catch
 #endif
 
+#ifdef CATCH_ROS
+#include <catch_ros/catch.hpp> // for AssertionHandler, StringRef, CHECK, CHE...
+#else
 #include <catch/catch.hpp> // for AssertionHandler, StringRef, CHECK, CHE...
+#endif
 
 #include <gsl/gsl_algorithm> // for copy
 #include <gsl/span>          // for span

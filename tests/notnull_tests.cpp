@@ -23,7 +23,11 @@
 #pragma warning(disable : 4702) // unreachable code
 #endif
 
+#ifdef CATCH_ROS
+#include <catch_ros/catch.hpp> // for AssertionHandler, StringRef, CHECK, TEST_...
+#else
 #include <catch/catch.hpp> // for AssertionHandler, StringRef, CHECK, TEST_...
+#endif
 
 #include <gsl/pointers> // for not_null, operator<, operator<=, operator>
 

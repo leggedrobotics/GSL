@@ -24,4 +24,8 @@
 #pragma warning(disable : ALL_CODE_ANALYSIS_WARNINGS) // from catch
 #endif // _MSC_VER
 
+#ifdef CATCH_ROS
+#include <catch_ros/catch.hpp>
+#else
 #include <catch/catch.hpp>
+#endif
