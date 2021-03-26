@@ -1,23 +1,14 @@
 cmake_minimum_required(VERSION 3.1.3)
 
-option(BUILD_CATKIN_PACKAGE "Build catkin package" ON)
-
-if(BUILD_CATKIN_PACKAGE)
-  project(gsl_catkin CXX)
-else()
-  project(GSL CXX)
-endif()
+project(gsl_catkin CXX)
 
 include(ExternalProject)
 find_package(Git)
 
-if(BUILD_CATKIN_PACKAGE)
-  find_package(catkin REQUIRED)
-  catkin_package(
-    INCLUDE_DIRS include
-    LIBRARIES GSL
-  )
-endif(BUILD_CATKIN_PACKAGE)
+find_package(catkin REQUIRED)
+catkin_package(
+  INCLUDE_DIRS include
+)
 
 # creates a library GSL which is an interface (header files only)
 add_library(GSL INTERFACE)
@@ -100,12 +91,6 @@ install(
     DIRECTORY include/gsl
     DESTINATION include
 )
-
-option(GSL_TEST "Generate tests." ${GSL_STANDALONE_PROJECT})
-if (NOT BUILD_CATKIN_PACKAGE AND GSL_TEST)
-	enable_testing()
-	add_subdirectory(tests)
-endif ()
 
 
 
