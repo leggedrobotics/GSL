@@ -101,11 +101,6 @@ install(
     DESTINATION include
 )
 
-
-if(BUILD_CATKIN_PACKAGE AND CATKIN_ENABLE_TESTING)
-    include(tests/CMakeLists.txt)
-endif()
-
 option(GSL_TEST "Generate tests." ${GSL_STANDALONE_PROJECT})
 if (NOT BUILD_CATKIN_PACKAGE AND GSL_TEST)
 	enable_testing()
